@@ -35,6 +35,13 @@
  */
 @property (strong, readwrite, nonatomic) APNumberButton *clearButton;
 
+@property (strong, readwrite, nonatomic) APNumberButton *multiplicationButton;
+@property (strong, readwrite, nonatomic) APNumberButton *additionButton;
+@property (strong, readwrite, nonatomic) APNumberButton *subtractionButton;
+@property (strong, readwrite, nonatomic) APNumberButton *divisionButton;
+@property (strong, readwrite, nonatomic) APNumberButton *decimalSeparatorButton;
+
+
 /**
  *  APNumberPad delegate
  */
@@ -92,11 +99,12 @@
         
         // Function button
         //
-        self.leftButton = [self functionButton];
-        self.leftButton.titleLabel.font = [self.styleClass functionButtonFont];
-        [self.leftButton setTitleColor:[self.styleClass functionButtonTextColor] forState:UIControlStateNormal];
-        [self.leftButton addTarget:self action:@selector(functionButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        [self addSubview:self.leftButton];
+        //        self.leftButton = [self functionButton];
+        //        self.leftButton.titleLabel.font = [self.styleClass functionButtonFont];
+        //        [self.leftButton setTitleColor:[self.styleClass functionButtonTextColor] forState:UIControlStateNormal];
+        //        [self.leftButton addTarget:self action:@selector(functionButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        //        [self addSubview:self.leftButton];
+        
         
         // Clear button
         //
@@ -109,6 +117,23 @@
         longPressGestureRecognizer.cancelsTouchesInView = NO;
         [self.clearButton addGestureRecognizer:longPressGestureRecognizer];
         [self addSubview:self.clearButton];
+        
+        // Mulitplication button
+        //
+        self.multiplicationButton = [self calculationButton:@"*"];
+        [self addSubview:self.multiplicationButton];
+        
+        self.divisionButton = [self calculationButton:@"/"];
+        [self addSubview:self.divisionButton];
+        
+        self.additionButton = [self calculationButton:@"+"];
+        [self addSubview:self.additionButton];
+        
+        self.subtractionButton = [self calculationButton:@"-"];
+        [self addSubview:self.subtractionButton];
+        
+        self.decimalSeparatorButton = [self calculationButton:@","];
+        [self addSubview:self.decimalSeparatorButton];
     }
     return self;
 }
@@ -120,12 +145,17 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     
+    CGFloat spaceNumberKeys = 0.5f;
     int rows = 4;
     int sections = 3;
+    int sectionsForWidth = 4;
+    
     
     CGFloat sep = [self.styleClass separator];
-    CGFloat left = 0.f;
-    CGFloat top = 0.f;
+    CGFloat startLeft = CGRectGetWidth(self.bounds) * spaceNumberKeys;
+    CGFloat startTop = 0.f;
+    CGFloat left = startLeft;
+    CGFloat top = startTop;
     
 #if defined(__LP64__) && __LP64__
     CGFloat buttonHeight = trunc((CGRectGetHeight(self.bounds) - sep * (rows - 1)) / rows) + sep;
@@ -133,8 +163,8 @@
     CGFloat buttonHeight = truncf((CGRectGetHeight(self.bounds) - sep * (rows - 1)) / rows) + sep;
 #endif
     
-    CGSize buttonSize = CGSizeMake((CGRectGetWidth(self.bounds) - sep * (sections - 1)) / sections, buttonHeight);
-
+    CGSize buttonSize = CGSizeMake((CGRectGetWidth(self.bounds) * spaceNumberKeys - sep * (sectionsForWidth - 1)) / sectionsForWidth, buttonHeight);
+    
     // Number buttons (1-9)
     //
     for (int i = 1; i < self.numberButtons.count - 1; i++) {
@@ -142,7 +172,7 @@
         numberButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
         
         if (i % sections == 0) {
-            left = 0.f;
+            left = startLeft;
             top += buttonSize.height + sep;
         } else {
             left += buttonSize.width + sep;
@@ -151,19 +181,36 @@
     
     // Function button
     //
-    left = 0.f;
-    self.leftButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
+    //    left = startLeft;
+    //    self.leftButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
     
     // Number buttons (0)
     //
-    left += buttonSize.width + sep;
+    left = startLeft;
     UIButton *zeroButton = self.numberButtons.firstObject;
     zeroButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
     
+    left += buttonSize.width + sep;
+    self.decimalSeparatorButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
+    
+    
+    left += buttonSize.width + sep;
+    self.additionButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
+    
     // Clear button
     //
-    left += buttonSize.width + sep;
+    left = startLeft + sections * buttonSize.width + (sections + 1) * sep;
+    top = startTop;
     self.clearButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
+    
+    top += buttonSize.height + sep;
+    self.divisionButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
+    
+    top += buttonSize.height + sep;
+    self.multiplicationButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
+    
+    top += buttonSize.height + sep;
+    self.subtractionButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
 }
 
 #pragma mark - Notifications
@@ -234,7 +281,7 @@
     if (self.lastTouch) {
         [self performLastTouchAction];
     }
-
+    
     // `touches` contains only one UITouch (self.multipleTouchEnabled == NO)
     //
     self.lastTouch = [touches anyObject];
@@ -400,6 +447,45 @@
     }
 }
 
+- (void)calculationButtonAction:(UIButton *)sender
+{
+    if (!self.textInput) {
+        return;
+    }
+    NSString *text = nil;
+    if (sender == self.multiplicationButton) {
+        text = @"*";
+    } else if (sender == self.divisionButton) {
+        text = @"/";
+    } else if (sender == self.additionButton) {
+        text = @"+";
+    } else if (sender == self.subtractionButton) {
+        text = @"-";
+    } else if (sender == self.decimalSeparatorButton) {
+        text = @",";
+    }
+    
+    if (_delegateFlags.textInputSupportsShouldChangeTextInRange) {
+        if ([self.textInput shouldChangeTextInRange:self.textInput.selectedTextRange replacementText:text]) {
+            [self.textInput insertText:text];
+        }
+    } else if (_delegateFlags.delegateSupportsTextFieldShouldChangeCharactersInRange) {
+        NSRange selectedRange = [[self class] selectedRange:self.textInput];
+        UITextField *textField = (UITextField *)self.textInput;
+        if ([textField.delegate textField:textField shouldChangeCharactersInRange:selectedRange replacementString:text]) {
+            [self.textInput insertText:text];
+        }
+    } else if (_delegateFlags.delegateSupportsTextViewShouldChangeTextInRange) {
+        NSRange selectedRange = [[self class] selectedRange:self.textInput];
+        UITextView *textView = (UITextView *)self.textInput;
+        if ([textView.delegate textView:textView shouldChangeTextInRange:selectedRange replacementText:text]) {
+            [self.textInput insertText:text];
+        }
+    } else {
+        [self.textInput insertText:text];
+    }
+}
+
 - (void)functionButtonAction:(id)sender {
     if (!self.textInput) {
         return;
@@ -458,6 +544,15 @@
     [b setTitleColor:[self.styleClass numberButtonTextColor] forState:UIControlStateNormal];
     b.titleLabel.font = [self.styleClass numberButtonFont];
     [b setTitle:[NSString stringWithFormat:@"%d", number] forState:UIControlStateNormal];
+    return b;
+}
+
+- (APNumberButton *)calculationButton:(NSString *)title {
+    APNumberButton *b = [self functionButton];
+    b.titleLabel.font = [self.styleClass functionButtonFont];
+    [b setTitleColor:[self.styleClass functionButtonTextColor] forState:UIControlStateNormal];
+    [b setTitle:title forState:UIControlStateNormal];
+    [b addTarget:self action:@selector(calculationButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     return b;
 }
 

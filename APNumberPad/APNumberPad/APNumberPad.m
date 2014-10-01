@@ -118,18 +118,17 @@
         [self.clearButton addGestureRecognizer:longPressGestureRecognizer];
         [self addSubview:self.clearButton];
         
-        
-        
-//        self.hideKeyboardButton = [self functionButton];
-        APNumberButton *b = [APNumberButton buttonWithBackgroundColor:[self.styleClass numberButtonBackgroundColor]
-                                                     highlightedColor:[self.styleClass numberButtonHighlightedColor]];
+        // Hide keyboard button
+        //
+        APNumberButton *b = [APNumberButton buttonWithBackgroundColor:[self.styleClass functionButtonBackgroundColor]
+                                                     highlightedColor:[self.styleClass functionButtonHighlightedColor]];
         b.exclusiveTouch = YES;
         self.hideKeyboardButton = b;
         [self.hideKeyboardButton setImage:[self.styleClass hideKeyboardFunctionButtonImage] forState:UIControlStateNormal];
         [self.hideKeyboardButton addTarget:self action:@selector(hideKeyboardButtonAction) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:self.hideKeyboardButton];
         
-        // Mulitplication button
+        // Multiplication button
         //
         self.multiplicationButton = [self calculationButton:@"*"];
         [self addSubview:self.multiplicationButton];
@@ -137,7 +136,13 @@
         self.additionButton = [self calculationButton:@"+"];
         [self addSubview:self.additionButton];
         
-        self.decimalSeparatorButton = [self calculationButton:@","];
+        APNumberButton *decimalSeparatorButton = [APNumberButton buttonWithBackgroundColor:[self.styleClass numberButtonBackgroundColor]
+                                                     highlightedColor:[self.styleClass numberButtonHighlightedColor]];
+        decimalSeparatorButton.titleLabel.font = [self.styleClass functionButtonFont];
+        [decimalSeparatorButton setTitleColor:[self.styleClass functionButtonTextColor] forState:UIControlStateNormal];
+        [decimalSeparatorButton setTitle:@"," forState:UIControlStateNormal];
+        [decimalSeparatorButton addTarget:self action:@selector(calculationButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        self.decimalSeparatorButton = decimalSeparatorButton;
         [self addSubview:self.decimalSeparatorButton];
     }
     return self;
@@ -150,15 +155,15 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    CGFloat spaceNumberKeys = 0.5f;
     int rows = 4;
     int sections = 3;
     int sectionsForWidth = 4;
     
     
     CGFloat sep = [self.styleClass separator];
-    CGFloat width = CGRectGetWidth(self.bounds) * spaceNumberKeys;
-    CGFloat startLeft = (CGRectGetWidth(self.bounds) - width) / 2.0f;
+    CGFloat height = CGRectGetHeight(self.bounds);
+    CGFloat width = MIN(truncf(CGRectGetWidth(self.bounds)), height);
+    CGFloat startLeft = truncf((CGRectGetWidth(self.bounds) - width) / 2.0f);
     CGFloat startTop = 0.f;
     CGFloat left = startLeft;
     CGFloat top = startTop;
@@ -169,7 +174,9 @@
     CGFloat buttonHeight = truncf((CGRectGetHeight(self.bounds) - sep * (rows - 1)) / rows) + sep;
 #endif
     
-    CGSize buttonSize = CGSizeMake((width - sep * (sectionsForWidth - 1)) / sectionsForWidth, buttonHeight);
+    CGFloat buttonWidth = truncf((width - sep * (sectionsForWidth + 1)) / sectionsForWidth);
+    
+    CGSize buttonSize = CGSizeMake(buttonWidth, buttonHeight);
     
     // Number buttons (1-9)
     //
@@ -194,14 +201,15 @@
     //
     left = startLeft;
     UIButton *zeroButton = self.numberButtons.firstObject;
-    zeroButton.frame = CGRectMake(left, top, buttonSize.width * 2.0f, buttonSize.height);
+    CGFloat zeroButtonWidth = buttonSize.width * 2.0f + sep;
+    zeroButton.frame = CGRectMake(left, top, zeroButtonWidth, buttonSize.height);
     
     left += zeroButton.bounds.size.width + sep;
     self.decimalSeparatorButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
     
     // Clear button
     //
-    left = startLeft + sections * buttonSize.width + (sections + 1) * sep;
+    left = startLeft + sections * (buttonSize.width + sep);
     top = startTop;
     self.clearButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
     
@@ -551,7 +559,9 @@
 }
 
 - (APNumberButton *)calculationButton:(NSString *)title {
-    APNumberButton *b = [self functionButton];
+    APNumberButton *b = [APNumberButton buttonWithBackgroundColor:[self.styleClass functionButtonBackgroundColor]
+                                                 highlightedColor:[self.styleClass functionButtonHighlightedColor]];
+    b.exclusiveTouch = YES;
     b.titleLabel.font = [self.styleClass functionButtonFont];
     [b setTitleColor:[self.styleClass functionButtonTextColor] forState:UIControlStateNormal];
     [b setTitle:title forState:UIControlStateNormal];

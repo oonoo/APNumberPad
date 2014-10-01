@@ -28,7 +28,7 @@ static inline UIColor * APNP_RGBa(int r, int g, int b, CGFloat alpha) {
 }
 
 + (UIColor *)numberPadBackgroundColor {
-    return APNP_RGBa(183, 186, 191, 1.f);
+    return APNP_RGBa(214, 219, 225, 1.f);
 }
 
 #pragma mark - Number button

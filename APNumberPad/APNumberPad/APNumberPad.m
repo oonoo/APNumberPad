@@ -35,10 +35,10 @@
  */
 @property (strong, readwrite, nonatomic) APNumberButton *clearButton;
 
+@property (strong, readwrite, nonatomic) APNumberButton *hideKeyboardButton;
+
 @property (strong, readwrite, nonatomic) APNumberButton *multiplicationButton;
 @property (strong, readwrite, nonatomic) APNumberButton *additionButton;
-@property (strong, readwrite, nonatomic) APNumberButton *subtractionButton;
-@property (strong, readwrite, nonatomic) APNumberButton *divisionButton;
 @property (strong, readwrite, nonatomic) APNumberButton *decimalSeparatorButton;
 
 
@@ -118,19 +118,24 @@
         [self.clearButton addGestureRecognizer:longPressGestureRecognizer];
         [self addSubview:self.clearButton];
         
+        
+        
+//        self.hideKeyboardButton = [self functionButton];
+        APNumberButton *b = [APNumberButton buttonWithBackgroundColor:[self.styleClass numberButtonBackgroundColor]
+                                                     highlightedColor:[self.styleClass numberButtonHighlightedColor]];
+        b.exclusiveTouch = YES;
+        self.hideKeyboardButton = b;
+        [self.hideKeyboardButton setImage:[self.styleClass hideKeyboardFunctionButtonImage] forState:UIControlStateNormal];
+        [self.hideKeyboardButton addTarget:self action:@selector(hideKeyboardButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:self.hideKeyboardButton];
+        
         // Mulitplication button
         //
         self.multiplicationButton = [self calculationButton:@"*"];
         [self addSubview:self.multiplicationButton];
         
-        self.divisionButton = [self calculationButton:@"/"];
-        [self addSubview:self.divisionButton];
-        
         self.additionButton = [self calculationButton:@"+"];
         [self addSubview:self.additionButton];
-        
-        self.subtractionButton = [self calculationButton:@"-"];
-        [self addSubview:self.subtractionButton];
         
         self.decimalSeparatorButton = [self calculationButton:@","];
         [self addSubview:self.decimalSeparatorButton];
@@ -152,7 +157,8 @@
     
     
     CGFloat sep = [self.styleClass separator];
-    CGFloat startLeft = CGRectGetWidth(self.bounds) * spaceNumberKeys;
+    CGFloat width = CGRectGetWidth(self.bounds) * spaceNumberKeys;
+    CGFloat startLeft = (CGRectGetWidth(self.bounds) - width) / 2.0f;
     CGFloat startTop = 0.f;
     CGFloat left = startLeft;
     CGFloat top = startTop;
@@ -163,7 +169,7 @@
     CGFloat buttonHeight = truncf((CGRectGetHeight(self.bounds) - sep * (rows - 1)) / rows) + sep;
 #endif
     
-    CGSize buttonSize = CGSizeMake((CGRectGetWidth(self.bounds) * spaceNumberKeys - sep * (sectionsForWidth - 1)) / sectionsForWidth, buttonHeight);
+    CGSize buttonSize = CGSizeMake((width - sep * (sectionsForWidth - 1)) / sectionsForWidth, buttonHeight);
     
     // Number buttons (1-9)
     //
@@ -188,14 +194,10 @@
     //
     left = startLeft;
     UIButton *zeroButton = self.numberButtons.firstObject;
-    zeroButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
+    zeroButton.frame = CGRectMake(left, top, buttonSize.width * 2.0f, buttonSize.height);
     
-    left += buttonSize.width + sep;
+    left += zeroButton.bounds.size.width + sep;
     self.decimalSeparatorButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
-    
-    
-    left += buttonSize.width + sep;
-    self.additionButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
     
     // Clear button
     //
@@ -204,13 +206,13 @@
     self.clearButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
     
     top += buttonSize.height + sep;
-    self.divisionButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
+    self.additionButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
     
     top += buttonSize.height + sep;
     self.multiplicationButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
-    
+
     top += buttonSize.height + sep;
-    self.subtractionButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
+    self.hideKeyboardButton.frame = CGRectMake(left, top, buttonSize.width, buttonSize.height);
 }
 
 #pragma mark - Notifications
@@ -234,6 +236,15 @@
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(textDidEndEditing:)
                                                  name:UITextViewTextDidEndEditingNotification
+                                               object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(textDidChange:)
+                                                 name:UITextViewTextDidChangeNotification
+                                               object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(textDidChange:)
+                                                 name:UITextFieldTextDidChangeNotification
                                                object:nil];
 }
 
@@ -447,6 +458,11 @@
     }
 }
 
+- (void)hideKeyboardButtonAction
+{
+    [self.textInput resignFirstResponder];
+}
+
 - (void)calculationButtonAction:(UIButton *)sender
 {
     if (!self.textInput) {
@@ -455,12 +471,8 @@
     NSString *text = nil;
     if (sender == self.multiplicationButton) {
         text = @"*";
-    } else if (sender == self.divisionButton) {
-        text = @"/";
     } else if (sender == self.additionButton) {
         text = @"+";
-    } else if (sender == self.subtractionButton) {
-        text = @"-";
     } else if (sender == self.decimalSeparatorButton) {
         text = @",";
     }

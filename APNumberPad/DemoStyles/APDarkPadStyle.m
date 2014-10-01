@@ -50,5 +50,9 @@
     return [UIImage imageNamed:@"APNumberPad.bundle/images/apnumberpad_backspace_icon.png"];
 }
 
++ (UIImage *)hideKeyboardFunctionButtonImage {
+    return [UIImage imageNamed:@"APNumberPad.bundle/images/hide_keyboard.png"];
+}
+
 
 @end

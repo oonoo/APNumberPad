@@ -237,15 +237,6 @@
                                              selector:@selector(textDidEndEditing:)
                                                  name:UITextViewTextDidEndEditingNotification
                                                object:nil];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(textDidChange:)
-                                                 name:UITextViewTextDidChangeNotification
-                                               object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(textDidChange:)
-                                                 name:UITextFieldTextDidChangeNotification
-                                               object:nil];
 }
 
 - (void)textDidBeginEditing:(NSNotification *)notification {
